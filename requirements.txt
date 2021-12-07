@@ -1,0 +1,4 @@
+argparse
+slack_sdk
+datetime
+requests

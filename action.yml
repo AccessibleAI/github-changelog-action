@@ -1,0 +1,50 @@
+name: 'Github Changelog'
+description: 'Generate Changelog based on jira issues'
+author: 'Eli Lasry'
+runs:
+  using: "composite"
+  steps:
+    - name: Install script dependencies
+      run: pip install -r ${GITHUB_ACTION_PATH}/requirements.txt
+      shell: bash
+
+    - name: Install script dependencies
+      run: git fetch --tags
+      shell: bash
+
+    - name: Run python script
+      id: changelog
+      run: python ${GITHUB_ACTION_PATH}/release_notes.py --from-version ${{ inputs.from_version }} --to-version ${{ inputs.to_version }} --jira-token '${{ inputs.jira_token }}' --repo-name ${GITHUB_REPOSITORY} --slack-webhook-url ${{ inputs.slack_webhook_url }}
+      shell: bash
+
+    - run: echo change_log=$(cat ${{steps.changelog.outputs.change_log_file}}) >> $GITHUB_ENV
+      id: changelog_var
+      shell: bash
+
+    - run: echo "::set-output name=change_log::${change_log}"
+      id: changelog_output
+      shell: bash
+inputs:
+  from_version:
+    description: "From Tag Version"
+    required: true
+  to_version:
+    description: "To Tag Version"
+    required: true
+  jira_token:
+    description: "Jira token"
+    required: true
+  repo_name:
+    description: "Input to use"
+    required: false
+  slack_webhook_url:
+    description: "Input to use"
+    required: false
+    default: "false"
+outputs:
+  change_log_file:
+    description: "All commits titles from jira"
+    value: "${{steps.changelog.outputs.change_log_file}}"
+  change_log:
+    description: "All commits titles from jira"  #output without new lines
+    value: "${{steps.changelog_output.outputs.change_log}}"

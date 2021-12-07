@@ -1,0 +1,10 @@
+*.idea/
+*.venv/
+ngrok
+*__pycache__/
+*.pyc
+venv/
+*listner_env/
+.env
+*app_secret.yaml
+.tmp
