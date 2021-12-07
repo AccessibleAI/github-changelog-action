@@ -146,14 +146,15 @@ def get_all_tickets_from_messages(all_commit_messages):
     return tickets.keys()
 
 def create_release_notes_str(fix_versions_hash, version, repo_name=None, for_slack=False):
-    today = date.today()
-    if for_slack:
-        rn = "\n*{}*".format(repo_name)
-        rn += "\n* Version {}*".format(version)
-    else:
-        rn = "\n## Version {}".format(version)
-    today_str = today.strftime("%Y-%m-%d")
-    rn += "\n{}".format(today_str)
+    rn = ""
+    # today = date.today()
+    # if for_slack:
+        # rn = "\n*{}*".format(repo_name)
+        # rn += "\n* Version {}*".format(version)
+    # else:
+        # rn = "\n## Version {}".format(version)
+    # today_str = today.strftime("%Y-%m-%d")
+    # rn += "\n{}".format(today_str)
     for fix_version_name in fix_versions_hash:
         fixVersion = fix_versions_hash[fix_version_name]
         if fixVersion.has_epics():
@@ -228,6 +229,10 @@ if __name__ == '__main__':
     file = '/tmp/release_notes.txt'
     add_to_rn_file(rn,file)
     print(f"::set-output name=change_log_file::{file}")
+    if 'dev' in rn.lower():
+        print("::set-output name=empty::false")
+    else:
+        print("::set-output name=empty::true")
     # set_env_var("changelog",rn)
     # rn2 = create_release_notes_str(fix_versions_hash, to_version, repo_name=repo_name, for_slack=True)
     # slack_webhook_url = args.slack_webhook_url

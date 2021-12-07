@@ -17,13 +17,27 @@ runs:
       run: python ${GITHUB_ACTION_PATH}/release_notes.py --from-version ${{ inputs.from_version }} --to-version ${{ inputs.to_version }} --jira-token '${{ inputs.jira_token }}' --repo-name ${GITHUB_REPOSITORY} --slack-webhook-url ${{ inputs.slack_webhook_url }}
       shell: bash
 
-    - run: echo change_log=$(cat ${{steps.changelog.outputs.change_log_file}}) >> $GITHUB_ENV
-      id: changelog_var
+    - name: Generate changelog
+      id: changelog_final
       shell: bash
+      run: |
+        log=$(cat ${{ steps.changelog.outputs.change_log_file }})
+        log="${log//'%'/'%25'}"
+        log="${log//$'\n'/'%0A'}"
+        log="${log//$'\r'/'%0D'}"
+        echo "::set-output name=changelog::$log"
 
-    - run: echo "::set-output name=change_log::${change_log}"
-      id: changelog_output
+    - name: Print empty var
       shell: bash
+      run: echo empty? - ${{ steps.changelog.outputs.empty }}
+
+    - name: Print log
+      shell: bash
+      run: |
+        log=$(cat << "EOF"
+        ${{ steps.changelog_final.outputs.changelog }}
+        EOF
+        )
 inputs:
   from_version:
     description: "From Tag Version"
@@ -45,6 +59,9 @@ outputs:
   change_log_file:
     description: "All commits titles from jira"
     value: "${{steps.changelog.outputs.change_log_file}}"
-  change_log:
+  changelog:
     description: "All commits titles from jira"  #output without new lines
-    value: "${{steps.changelog_output.outputs.change_log}}"
+    value: "${{steps.changelog_final.outputs.changelog}}"
+  empty:
+    description: "Is the changelog empty?"
+    value: "${{steps.changelog.outputs.empty}}"
