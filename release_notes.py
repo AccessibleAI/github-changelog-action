@@ -67,9 +67,9 @@ class Ticket:
 
     def issue_type_val(issueType):
         if issueType == 'Epic':
-            return 1
+            return 3
         elif issueType == 'Task':
-            return 2
+            return 4
         elif issueType == 'New Feature':
             return 3
         elif issueType == 'Improvment':
@@ -77,7 +77,7 @@ class Ticket:
         elif issueType == 'Bug':
             return 5
         elif issueType == 'Sub-task':
-            return 6
+            return 7
         else:
             return 7
 
