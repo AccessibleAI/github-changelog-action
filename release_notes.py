@@ -1,20 +1,16 @@
 import argparse
-from slack_sdk.webhook import WebhookClient
 from datetime import date
 import requests
 import re
 import subprocess
+import os
 
 parser = argparse.ArgumentParser(description='Create release notes.')
 parser.add_argument('--from-version', metavar='From Version', type=str,
                     help='The version to start from')
 parser.add_argument('--to-version', metavar='To Version', type=str,
                     help='The new version')
-parser.add_argument('--jira-token', metavar='JiraToken', type=str)
-parser.add_argument('--slack', metavar='Slack', type=str)
-parser.add_argument('--repo-name', metavar='repo_name', type=str)
-parser.add_argument('--slack-webhook-url', metavar='slack_webhook_url', type=str)
-
+parser.add_argument('--jira-token', metavar='JiraToken',nargs='?', type=str)
 class FixVersion:
     def __init__(self, name):
         self.name = name
@@ -64,6 +60,14 @@ class Ticket:
             return "{} - {}: {}\n{}".format(self.key, self.issueType, self.summary, self.description)
         else:
             return "{} - {}: {}".format(self.key, self.issueType, self.summary)
+
+    def print_without_key(self):
+        if self.issueType == "Bug":
+            self.issueType = "Fix"
+        if self.issueType == "Epic":
+            return "{}: {}\n{}".format(self.issueType, self.summary, self.description)
+        else:
+            return "{}: {}".format(self.issueType, self.summary)
 
     def issue_type_val(issueType):
         if issueType == 'Epic':
@@ -145,16 +149,9 @@ def get_all_tickets_from_messages(all_commit_messages):
             tickets[ticket] = True
     return tickets.keys()
 
-def create_release_notes_str(fix_versions_hash, version, repo_name=None, for_slack=False):
+def create_release_notes_str(fix_versions_hash):
     rn = ""
-    # today = date.today()
-    # if for_slack:
-        # rn = "\n*{}*".format(repo_name)
-        # rn += "\n* Version {}*".format(version)
-    # else:
-        # rn = "\n## Version {}".format(version)
-    # today_str = today.strftime("%Y-%m-%d")
-    # rn += "\n{}".format(today_str)
+
     for fix_version_name in fix_versions_hash:
         fixVersion = fix_versions_hash[fix_version_name]
         if fixVersion.has_epics():
@@ -168,26 +165,25 @@ def create_release_notes_str(fix_versions_hash, version, repo_name=None, for_sla
                 rn += "\n* {}".format(ticket)
     return rn
 
+def create_release_notes_str_without_key(fix_versions_hash):
+    rn = ""
+
+    for fix_version_name in fix_versions_hash:
+        fixVersion = fix_versions_hash[fix_version_name]
+        if fixVersion.has_epics():
+            for ticket in fixVersion.epic_tickets:
+                rn += "\n* {}".format(ticket.print_without_key())
+            for ticket in fixVersion.tickets:
+                if ticket.issueTypeVal < 5:
+                    rn += "\n* {}".format(ticket.print_without_key())
+        else:
+            for ticket in fixVersion.tickets:
+                rn += "\n* {}".format(ticket.print_without_key())
+    return rn
+
 def add_to_rn_file(rn,file="Readme.md"):
-    with open(file, "a") as rn_file:
+    with open(file, "w") as rn_file:
         rn_file.write(rn)
-
-def send_to_slack(rn,slack_webhook_url=None):
-    url =slack_webhook_url
-    webhook = WebhookClient(url)
-
-    response = webhook.send(text="Release notes!",
-    blocks=[
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": rn
-            }
-        }
-    ])
-    #assert response.status_code == 200
-    #assert response.body == "ok"
 
 def build_fix_versions_hash(tickets):
     fix_versions_hash = {}
@@ -220,21 +216,19 @@ if __name__ == '__main__':
     jira_token=args.jira_token
     all_commit_messages = get_all_commits_messages_since_tag(from_version)
     tickets_numbers = get_all_tickets_from_messages(all_commit_messages)
-    repo_name = args.repo_name
     tickets = create_tickets(tickets_numbers, jira_token)
     fix_versions_hash = build_fix_versions_hash(tickets)
     add_epics_to_fix_versions(fix_versions_hash, jira_token)
 
-    rn = create_release_notes_str(fix_versions_hash, to_version)
+    rn = create_release_notes_str(fix_versions_hash)
+    rn2 = create_release_notes_str_without_key(fix_versions_hash)
     file = '/tmp/release_notes.txt'
+    file2 = '/tmp/release_notes_without_issues.txt'
     add_to_rn_file(rn,file)
+    add_to_rn_file(rn2,file2)
     print(f"::set-output name=change_log_file::{file}")
+    print(f"::set-output name=change_log_file_without_issues::{file2}")
     if 'dev' in rn.lower():
         print("::set-output name=empty::false")
     else:
         print("::set-output name=empty::true")
-    # set_env_var("changelog",rn)
-    # rn2 = create_release_notes_str(fix_versions_hash, to_version, repo_name=repo_name, for_slack=True)
-    # slack_webhook_url = args.slack_webhook_url
-    # if slack_webhook_url != "false":
-    #     send_to_slack(rn2,slack_webhook_url)

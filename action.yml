@@ -14,7 +14,7 @@ runs:
 
     - name: Run python script
       id: changelog
-      run: python ${GITHUB_ACTION_PATH}/release_notes.py --from-version ${{ inputs.from_version }} --to-version ${{ inputs.to_version }} --jira-token '${{ inputs.jira_token }}' --repo-name ${GITHUB_REPOSITORY} --slack-webhook-url ${{ inputs.slack_webhook_url }}
+      run: python ${GITHUB_ACTION_PATH}/release_notes.py --from-version ${{ inputs.from_version }} --to-version ${{ inputs.to_version }} --jira-token '${{ inputs.jira_token }}'
       shell: bash
 
     - name: Generate changelog
@@ -48,17 +48,13 @@ inputs:
   jira_token:
     description: "Jira token"
     required: true
-  repo_name:
-    description: "Input to use"
-    required: false
-  slack_webhook_url:
-    description: "Input to use"
-    required: false
-    default: "false"
 outputs:
   change_log_file:
-    description: "All commits titles from jira"
+    description: "name of file with release notes output"
     value: "${{steps.changelog.outputs.change_log_file}}"
+  change_log_file_without_issues:
+    description: "name of file with release notes output"
+    value: "${{steps.changelog.outputs.change_log_file_without_issues}}"
   changelog:
     description: "All commits titles from jira"  #output without new lines
     value: "${{steps.changelog_final.outputs.changelog}}"
