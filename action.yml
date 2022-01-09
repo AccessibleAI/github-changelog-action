@@ -27,6 +27,16 @@ runs:
         log="${log//$'\r'/'%0D'}"
         echo "::set-output name=changelog::$log"
 
+    - name: Generate Public changelog
+      id: public_changelog_final
+      shell: bash
+      run: |
+        log=$(cat ${{ steps.changelog.outputs.change_log_file_without_issues }})
+        log="${log//'%'/'%25'}"
+        log="${log//$'\n'/'%0A'}"
+        log="${log//$'\r'/'%0D'}"
+        echo "::set-output name=public_changelog::$log"
+
     - name: Print empty var
       shell: bash
       run: echo empty? - ${{ steps.changelog.outputs.empty }}
@@ -36,6 +46,10 @@ runs:
       run: |
         log=$(cat << "EOF"
         ${{ steps.changelog_final.outputs.changelog }}
+        EOF
+        )
+        log2=$(cat << "EOF"
+        ${{ steps.public_changelog_final.outputs.public_changelog }}
         EOF
         )
 inputs:
@@ -58,6 +72,9 @@ outputs:
   changelog:
     description: "All commits titles from jira"  #output without new lines
     value: "${{steps.changelog_final.outputs.changelog}}"
+  public_changelog:
+    description: "All commits titles from jira"  #output without new lines
+    value: "${{steps.public_changelog_final.outputs.public_changelog}}"
   empty:
     description: "Is the changelog empty?"
     value: "${{steps.changelog.outputs.empty}}"
