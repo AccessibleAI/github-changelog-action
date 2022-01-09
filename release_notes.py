@@ -133,9 +133,13 @@ def run_git_command(command):
 def set_env_var(name,value):
     run_git_command(f"echo {name}={value} >> $GITHUB_ENV")
 
-def get_all_commits_messages_since_tag(from_version):
-    version_commit = run_git_command("git rev-list -n 1 {}".format(from_version))
-    messages = run_git_command("git log {}..HEAD  --pretty=format:'%s'".format(version_commit))
+def get_all_commits_messages_since_tag(from_version,to_version):
+    if run_git_command("git tag -l {}".format(from_version)) == "":
+        from_version = "origin/{}".format(from_version)
+        to_version = "origin/{}".format(to_version)
+    from_version_rev = run_git_command("git rev-parse {}".format(from_version))
+    to_version_rev = run_git_command("git rev-parse {}".format(to_version))
+    messages = run_git_command("git log {}..{}  --pretty=format:'%s'".format(from_version_rev,to_version_rev))
     messages = messages.splitlines()
     messages = list(set(messages)) # Filter duplicates
     return messages
@@ -214,7 +218,7 @@ if __name__ == '__main__':
     from_version = args.from_version
     to_version = args.to_version
     jira_token=args.jira_token
-    all_commit_messages = get_all_commits_messages_since_tag(from_version)
+    all_commit_messages = get_all_commits_messages_since_tag(from_version,to_version)
     tickets_numbers = get_all_tickets_from_messages(all_commit_messages)
     tickets = create_tickets(tickets_numbers, jira_token)
     fix_versions_hash = build_fix_versions_hash(tickets)
