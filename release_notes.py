@@ -121,7 +121,7 @@ def create_tickets(tickets_numbers, jira_token):
         except Exception as e:
             print(e)
             print("failed to get ticket data {}".format(ticket_number))
-    tickets.sort()
+    tickets.sort(reverse=True)
     return tickets
 
 def run_git_command(command):
@@ -182,7 +182,8 @@ def create_release_notes_str_without_key(fix_versions_hash):
                     rn += "\n* {}".format(ticket.print_without_key())
         else:
             for ticket in fixVersion.tickets:
-                rn += "\n* {}".format(ticket.print_without_key())
+                if ticket.issueType != "Task":
+                    rn += "\n* {}".format(ticket.print_without_key())
     return rn
 
 def add_to_rn_file(rn,file="Readme.md"):
