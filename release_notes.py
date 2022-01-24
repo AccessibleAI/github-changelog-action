@@ -167,6 +167,7 @@ def create_release_notes_str(fix_versions_hash):
         else:
             for ticket in fixVersion.tickets:
                 rn += "\n* {}".format(ticket)
+    rn += "\n"
     return rn
 
 def create_release_notes_str_without_key(fix_versions_hash):
@@ -184,6 +185,7 @@ def create_release_notes_str_without_key(fix_versions_hash):
             for ticket in fixVersion.tickets:
                 if ticket.issueType != "Task":
                     rn += "\n* {}".format(ticket.print_without_key())
+    rn += "\n"
     return rn
 
 def add_to_rn_file(rn,file="Readme.md"):
